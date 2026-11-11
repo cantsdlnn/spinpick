@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Çarkla</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="İsimleri gir, 3D çarkı çevir, rastgele kazananı seç.">
+<meta name="description" content="Enter names, spin the 3D wheel and pick a random winner.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -274,73 +274,73 @@
       <path d="M16 16 L3.9 23 A14 14 0 0 1 3.9 9 Z" fill="#fff" opacity=".6"/>
       <circle cx="16" cy="16" r="3.4" fill="#f2c063"/>
     </svg>
-    <div>Çarkla<small>Rastgele isim seçici</small></div>
+    <div>Çarkla<small>Random name picker</small></div>
   </div>
   <div class="top-actions">
-    <button class="ghost" id="fullscreen" title="Tam ekran">
+    <button class="ghost" id="fullscreen" title="Full screen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-      <span class="t">Tam ekran</span>
+      <span class="t">Full screen</span>
     </button>
-    <button class="ghost" id="toggle-panel" title="Paneli gizle / göster">
+    <button class="ghost" id="toggle-panel" title="Hide / show panel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
-      <span class="t" id="toggle-panel-t">Paneli gizle</span>
+      <span class="t" id="toggle-panel-t">Hide panel</span>
     </button>
   </div>
 </header>
 
 <main class="app" id="app">
   <section class="stage" id="stage">
-    <button class="ghost icon fs-exit" id="fs-exit" aria-label="Tam ekrandan çık" title="Tam ekrandan çık">
+    <button class="ghost icon fs-exit" id="fs-exit" aria-label="Exit full screen" title="Exit full screen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
     </button>
     <div class="stage-head">
-      <input class="title-input" id="title" maxlength="60" aria-label="Çark başlığı" spellcheck="false">
+      <input class="title-input" id="title" maxlength="60" aria-label="Wheel title" spellcheck="false">
     </div>
     <div id="wheel-wrap">
-      <div class="loader" id="loader">3D sahne yükleniyor…</div>
-      <canvas id="wheel-canvas" aria-label="Şans çarkı. Çevirmek için tıklayın."></canvas>
+      <div class="loader" id="loader">Loading 3D scene…</div>
+      <canvas id="wheel-canvas" aria-label="Name wheel. Click to spin."></canvas>
     </div>
     <div class="stage-foot">
-      <button class="spin-btn" id="spin">ÇEVİR</button>
-      <div class="hint">Çarka tıklayarak da çevirebilirsin <kbd>Ctrl</kbd>+<kbd>Enter</kbd></div>
+      <button class="spin-btn" id="spin">SPIN</button>
+      <div class="hint">You can also click the wheel to spin <kbd>Ctrl</kbd>+<kbd>Enter</kbd></div>
     </div>
   </section>
 
   <aside class="panel" id="panel">
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-tab="names">İsimler <span class="badge" id="names-count">0</span></button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="colors">Renkler</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="results">Sonuçlar <span class="badge" id="results-count">0</span></button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="settings">Ayarlar</button>
+      <button class="tab" role="tab" aria-selected="true" data-tab="names">Names <span class="badge" id="names-count">0</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="colors">Colors</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="results">Results <span class="badge" id="results-count">0</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="settings">Settings</button>
     </div>
 
     <div class="tab-body active" data-body="names">
       <div class="toolbar">
-        <button class="tool" id="shuffle" title="İsimleri karıştır">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>Karıştır</button>
-        <button class="tool" id="sort" title="Alfabetik sırala">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5M18 8v12M15 17l3 3 3-3"/></svg>Sırala</button>
-        <button class="tool" id="sample" title="Örnek isimler">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg>Örnek</button>
-        <button class="tool danger" id="clear" title="Tümünü temizle">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Temizle</button>
+        <button class="tool" id="shuffle" title="Shuffle names">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>Shuffle</button>
+        <button class="tool" id="sort" title="Sort alphabetically">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5M18 8v12M15 17l3 3 3-3"/></svg>Sort</button>
+        <button class="tool" id="sample" title="Sample names">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg>Sample</button>
+        <button class="tool danger" id="clear" title="Clear all">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Clear</button>
       </div>
       <form class="add-row" id="add-form">
-        <input id="add-input" placeholder="İsim ekle ve Enter'a bas" maxlength="80" autocomplete="off">
-        <button type="submit">Ekle</button>
+        <input id="add-input" placeholder="Add a name and press Enter" maxlength="80" autocomplete="off">
+        <button type="submit">Add</button>
       </form>
-      <textarea class="names" id="names" spellcheck="false" aria-label="Çarktaki isimler, her satıra bir isim"></textarea>
-      <div class="small">Her satıra bir isim yaz. Aynı isim birden fazla yazılırsa çarkta o kadar dilim alır.</div>
+      <textarea class="names" id="names" spellcheck="false" aria-label="Names on the wheel, one per line"></textarea>
+      <div class="small">Write one name per line. A name entered more than once gets that many slices on the wheel.</div>
     </div>
 
     <div class="tab-body" data-body="colors">
       <div class="setting col">
-        <span class="lbl">Hazır renk teması</span>
+        <span class="lbl">Color theme</span>
         <div class="palettes" id="palettes"></div>
       </div>
       <div class="seg-head">
-        <div><div class="lbl" style="font-weight:700;font-size:14px">Dilim renkleri</div><div class="small">Bir rengin üstüne tıklayıp istediğin rengi seç</div></div>
-        <button class="tool" id="reset-colors">Tümünü sıfırla</button>
+        <div><div class="lbl" style="font-weight:700;font-size:14px">Slice colors</div><div class="small">Click a swatch to pick any color</div></div>
+        <button class="tool" id="reset-colors">Reset all</button>
       </div>
       <ul class="seg-list" id="seg-list"></ul>
     </div>
@@ -348,26 +348,26 @@
     <div class="tab-body" data-body="results">
       <ul class="results" id="results"></ul>
       <div class="toolbar" style="grid-template-columns:1fr 1fr">
-        <button class="tool" id="copy-results">Kopyala</button>
-        <button class="tool danger" id="clear-results">Sonuçları temizle</button>
+        <button class="tool" id="copy-results">Copy</button>
+        <button class="tool danger" id="clear-results">Clear results</button>
       </div>
     </div>
 
     <div class="tab-body" data-body="settings">
       <div class="setting col">
-        <div class="row"><span class="lbl">Dönme süresi</span><span class="val" id="dur-val">8 sn</span></div>
-        <input type="range" id="duration" min="2" max="20" step="1" aria-label="Dönme süresi (saniye)">
+        <div class="row"><span class="lbl">Spin duration</span><span class="val" id="dur-val">8 s</span></div>
+        <input type="range" id="duration" min="2" max="20" step="1" aria-label="Spin duration (seconds)">
       </div>
       <label class="setting">
-        <div><div class="lbl">Kazananı otomatik kaldır</div><div class="sub">Seçilen isim çarktan çıkarılır</div></div>
+        <div><div class="lbl">Remove winner automatically</div><div class="sub">The picked name is taken off the wheel</div></div>
         <span class="switch"><input type="checkbox" id="auto-remove"><span></span></span>
       </label>
       <label class="setting">
-        <div><div class="lbl">Ses efektleri</div><div class="sub">Tık sesi ve kutlama müziği</div></div>
+        <div><div class="lbl">Sound effects</div><div class="sub">Peg clicks and winner celebration</div></div>
         <span class="switch"><input type="checkbox" id="sound"><span></span></span>
       </label>
       <label class="setting">
-        <div><div class="lbl">Konfeti</div><div class="sub">Kazanan çıkınca kutlama</div></div>
+        <div><div class="lbl">Confetti</div><div class="sub">Celebrate when a winner is picked</div></div>
         <span class="switch"><input type="checkbox" id="confetti"><span></span></span>
       </label>
     </div>
@@ -376,16 +376,16 @@
 
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="winner-name">
   <div class="card">
-    <button class="ghost icon x" id="modal-x" aria-label="Kapat">
+    <button class="ghost icon x" id="modal-x" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
-    <div class="eyebrow">Kazanan</div>
+    <div class="eyebrow">Winner</div>
     <canvas id="trophy-canvas" width="440" height="440"></canvas>
     <div class="winner-name" id="winner-name">—</div>
     <div class="card-actions">
-      <button class="btn" id="m-close">Kapat</button>
-      <button class="btn" id="m-remove">Çarktan kaldır</button>
-      <button class="btn primary" id="m-again">Tekrar çevir</button>
+      <button class="btn" id="m-close">Close</button>
+      <button class="btn" id="m-remove">Remove from wheel</button>
+      <button class="btn primary" id="m-again">Spin again</button>
     </div>
   </div>
 </div>
@@ -399,23 +399,26 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ================= State ================= */
 const KEY = 'carkla.v1';
-const SAMPLE = ['Ayşe','Mehmet','Zeynep','Can','Elif','Burak','Selin','Emre'];
+const SAMPLE = ['Alex','Sam','Jordan','Taylor','Morgan','Riley','Casey','Jamie'];
 const PALETTES = {
-  gece:    { name:'Gece',    colors:['#6D5DFC','#FF5C8A','#FFB547','#22C3A6','#3BA7FF','#B15CFF'] },
+  gece:    { name:'Night',   colors:['#6D5DFC','#FF5C8A','#FFB547','#22C3A6','#3BA7FF','#B15CFF'] },
   pastel:  { name:'Pastel',  colors:['#A5B4FC','#F9A8D4','#FDE68A','#86EFAC','#93C5FD','#FDBA74'] },
   neon:    { name:'Neon',    colors:['#00F5D4','#F15BB5','#FEE440','#00BBF9','#9B5DE5','#FF6B35'] },
-  sonbahar:{ name:'Sonbahar',colors:['#E76F51','#F4A261','#E9C46A','#2A9D8F','#264653','#D4A373'] },
+  sonbahar:{ name:'Autumn',  colors:['#E76F51','#F4A261','#E9C46A','#2A9D8F','#264653','#D4A373'] },
 };
 const store = {
   get(){ try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } },
   set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} }
 };
 const state = Object.assign({
-  title:'Şans Çarkı', names:SAMPLE.join('\n'), duration:8,
+  title:'Spin the Wheel', names:SAMPLE.join('\n'), duration:8,
   autoRemove:false, sound:true, confetti:true, palette:'gece', results:[], panelHidden:false, segColors:{}
 }, store.get() || {});
 if (!PALETTES[state.palette]) state.palette = 'gece';
 if (!state.segColors || typeof state.segColors !== 'object') state.segColors = {};
+// Eski (Türkçe) sürümden kalan varsayılanları İngilizce karşılıklarına taşı
+if (state.title === 'Şans Çarkı') state.title = 'Spin the Wheel';
+if (state.names === 'Ayşe\nMehmet\nZeynep\nCan\nElif\nBurak\nSelin\nEmre') state.names = SAMPLE.join('\n');
 const save = () => store.set(state);
 
 /* ================= DOM ================= */
@@ -592,7 +595,7 @@ function drawWheel(names){
   if (!n) {
     ctx.fillStyle = '#26233d'; ctx.beginPath(); ctx.arc(C, C, RR, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#a19dbd'; ctx.font = `700 92px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('İsim ekleyin', C, C + 330);
+    ctx.fillText('Add names', C, C + 330);
     return;
   }
   const seg = Math.PI * 2 / n;
@@ -892,10 +895,10 @@ function indexAt(rot, n){ return Math.floor(norm(rot - Math.PI / 2) / (TAU / n))
 function spin(){
   if (spinning) return;
   names = getNames();
-  if (!names.length) { toast('Önce çarka isim ekleyin'); return; }
+  if (!names.length) { toast('Add some names to the wheel first'); return; }
   ensureAudio(); closeModal(true); startWhoosh();
   spinning = true; spinNames = names.slice();
-  els.names.readOnly = true; els.spin.disabled = true; els.spin.textContent = 'DÖNÜYOR…';
+  els.names.readOnly = true; els.spin.disabled = true; els.spin.textContent = 'SPINNING…';
   const T = state.duration;
   sim.k = pegCountFor(names.length);
   planSpin(sim, T);
@@ -905,7 +908,7 @@ function spin(){
 function finishSpin(){
   spinning = false; stopWhoosh();
   sim.done = true; sim.drive = null; sim.w = 0;
-  els.names.readOnly = false; els.spin.disabled = false; els.spin.textContent = 'ÇEVİR';
+  els.names.readOnly = false; els.spin.disabled = false; els.spin.textContent = 'SPIN';
   const idx = indexAt(sim.r, spinNames.length);
   const winner = spinNames[idx];
   state.results.unshift({ name: winner, at: Date.now() });
@@ -1031,7 +1034,7 @@ function removeName(name, auto){
   lines.splice(i, 1);
   els.names.value = lines.join('\n');
   onNamesChanged();
-  toast(auto ? `“${name}” otomatik olarak çarktan kaldırıldı` : `“${name}” çarktan kaldırıldı`);
+  toast(auto ? `“${name}” was removed from the wheel automatically` : `“${name}” removed from the wheel`);
   return true;
 }
 $('#modal-x').onclick = () => closeModal();
@@ -1057,10 +1060,10 @@ $('#add-form').addEventListener('submit', e => {
 $('#shuffle').onclick = () => {
   const a = getNames();
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  els.names.value = a.join('\n'); onNamesChanged(); toast('İsimler karıştırıldı');
+  els.names.value = a.join('\n'); onNamesChanged(); toast('Names shuffled');
 };
 $('#sort').onclick = () => {
-  els.names.value = getNames().sort((a, b) => a.localeCompare(b, 'tr')).join('\n'); onNamesChanged(); toast('Alfabetik sıralandı');
+  els.names.value = getNames().sort((a, b) => a.localeCompare(b, 'en')).join('\n'); onNamesChanged(); toast('Sorted A to Z');
 };
 $('#sample').onclick = () => { els.names.value = SAMPLE.join('\n'); onNamesChanged(); };
 $('#clear').onclick = () => {
@@ -1068,12 +1071,12 @@ $('#clear').onclick = () => {
   // sayfa içi onay: ilk tık uyarır, 3 sn içinde ikinci tık siler
   const b = $('#clear');
   if (!b.dataset.armed) {
-    b.dataset.armed = '1'; b.lastChild.textContent = 'Emin misin?'; toast('Tüm isimleri silmek için tekrar bas');
-    clearTimeout(b._t); b._t = setTimeout(() => { delete b.dataset.armed; b.lastChild.textContent = 'Temizle'; }, 3000);
+    b.dataset.armed = '1'; b.lastChild.textContent = 'Sure?'; toast('Press again to delete all names');
+    clearTimeout(b._t); b._t = setTimeout(() => { delete b.dataset.armed; b.lastChild.textContent = 'Clear'; }, 3000);
     return;
   }
-  clearTimeout(b._t); delete b.dataset.armed; b.lastChild.textContent = 'Temizle';
-  els.names.value = ''; onNamesChanged(); toast('Tüm isimler silindi');
+  clearTimeout(b._t); delete b.dataset.armed; b.lastChild.textContent = 'Clear';
+  els.names.value = ''; onNamesChanged(); toast('All names deleted');
 };
 
 // Sekmeler
@@ -1083,13 +1086,13 @@ document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', (
 }));
 
 // Sonuçlar
-const fmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' });
+const fmt = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' });
 function renderResults(){
   els.rcount.textContent = state.results.length;
   els.results.innerHTML = '';
   if (!state.results.length) {
     const li = document.createElement('li'); li.className = 'empty'; li.style.display = 'block';
-    li.textContent = 'Henüz sonuç yok. Çarkı çevir!'; els.results.append(li); return;
+    li.textContent = 'No results yet. Spin the wheel!'; els.results.append(li); return;
   }
   state.results.forEach((r, i) => {
     const li = document.createElement('li');
@@ -1102,13 +1105,13 @@ function renderResults(){
 $('#clear-results').onclick = () => { state.results = []; save(); renderResults(); };
 $('#copy-results').onclick = async () => {
   const txt = state.results.slice().reverse().map((r, i) => `${i + 1}. ${r.name}`).join('\n');
-  if (!txt) return toast('Kopyalanacak sonuç yok');
-  try { await navigator.clipboard.writeText(txt); toast('Sonuçlar panoya kopyalandı'); } catch { toast('Kopyalanamadı'); }
+  if (!txt) return toast('No results to copy');
+  try { await navigator.clipboard.writeText(txt); toast('Results copied to clipboard'); } catch { toast('Could not copy. Your browser blocked clipboard access.'); }
 };
 
 // Ayarlar
-els.duration.value = state.duration; els.durVal.textContent = state.duration + ' sn';
-els.duration.oninput = () => { state.duration = +els.duration.value; els.durVal.textContent = state.duration + ' sn'; save(); };
+els.duration.value = state.duration; els.durVal.textContent = state.duration + ' s';
+els.duration.oninput = () => { state.duration = +els.duration.value; els.durVal.textContent = state.duration + ' s'; save(); };
 for (const [k, el] of [['autoRemove', els.autoRemove], ['sound', els.sound], ['confetti', els.confetti]]) {
   el.checked = !!state[k]; el.onchange = () => { state[k] = el.checked; save(); };
 }
@@ -1138,18 +1141,18 @@ function renderSegList(){
   segList.innerHTML = '';
   if (!names.length) {
     const li = document.createElement('li'); li.className = 'empty'; li.style.display = 'block';
-    li.textContent = 'Önce İsimler sekmesinden isim ekleyin.'; segList.append(li); return;
+    li.textContent = 'Add names in the Names tab first.'; segList.append(li); return;
   }
   const colors = PALETTES[state.palette].colors, frag = document.createDocumentFragment();
   names.forEach((nm, i) => {
     const key = segKeys[i], col = segColor(i, names.length, colors);
     const li = document.createElement('li'); li.classList.toggle('custom', !!state.segColors[key]);
-    const sw = document.createElement('label'); sw.className = 'swatch'; sw.style.background = col; sw.title = 'Rengi değiştir';
+    const sw = document.createElement('label'); sw.className = 'swatch'; sw.style.background = col; sw.title = 'Change color';
     const inp = document.createElement('input'); inp.type = 'color'; inp.value = col.toLowerCase();
-    inp.setAttribute('aria-label', `${nm} dilim rengi`);
+    inp.setAttribute("aria-label", `Slice color for ${nm}`);
     const label = document.createElement('span'); label.className = 'nm'; label.textContent = nm;
     const hex = document.createElement('span'); hex.className = 'hex'; hex.textContent = col;
-    const rst = document.createElement('button'); rst.className = 'rst'; rst.type = 'button'; rst.title = 'Tema rengine dön'; rst.innerHTML = RESET_ICON;
+    const rst = document.createElement('button'); rst.className = 'rst'; rst.type = 'button'; rst.title = 'Back to theme color'; rst.innerHTML = RESET_ICON;
     inp.addEventListener('input', () => {
       state.segColors[key] = inp.value; sw.style.background = inp.value; hex.textContent = inp.value;
       li.classList.add('custom'); queueRedraw();
@@ -1161,8 +1164,8 @@ function renderSegList(){
   segList.append(frag);
 }
 $('#reset-colors').onclick = () => {
-  if (!Object.keys(state.segColors).length) return toast('Özel renk yok');
-  state.segColors = {}; save(); redrawOnly(); renderSegList(); toast('Dilim renkleri temaya döndü');
+  if (!Object.keys(state.segColors).length) return toast('No custom colors to reset');
+  state.segColors = {}; save(); redrawOnly(); renderSegList(); toast('Slice colors reset to the theme');
 };
 
 // Başlık
@@ -1172,7 +1175,7 @@ els.title.addEventListener('input', () => { state.title = els.title.value; save(
 // Üst butonlar
 function applyPanel(){
   els.app.classList.toggle('panel-hidden', state.panelHidden);
-  $('#toggle-panel-t').textContent = state.panelHidden ? 'Paneli göster' : 'Paneli gizle';
+  $('#toggle-panel-t').textContent = state.panelHidden ? 'Show panel' : 'Hide panel';
 }
 $('#toggle-panel').onclick = () => { state.panelHidden = !state.panelHidden; save(); applyPanel(); };
 // Tam ekran: önce tarayıcının gerçek tam ekranı, olmazsa (iPhone, uygulama içi tarayıcılar) sayfa içi tam ekran

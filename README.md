@@ -1,12 +1,15 @@
 # Çarkla
 
-İsimleri gir, 3D şans çarkını çevir, rastgele bir kazanan seç.
+Enter names, spin the 3D wheel and pick a random winner.
 
-- Türkçe arayüz, three.js ile 3D çark ve kupa modeli
-- İsim listesi, dilim renklerini tek tek değiştirme, sonuç geçmişi
-- Pimlere çarpan ibre, gerçekçi tık ve kutlama sesleri
+Live: https://cantsdlnn.github.io/carkla/
 
-Tek sayfalık statik bir sitedir: `index.html` ve `assets/trophy.glb`. Yerelde denemek için klasörde:
+- 3D wheel and trophy model rendered with three.js
+- Name list, per-slice colors, results history
+- A pointer that catches on the pegs, realistic click and celebration sounds
+- Works on phones, including a full-screen mode for browsers that block the Fullscreen API
+
+It is a single static page: `index.html` plus `assets/trophy.glb`. To try it locally, run this in the folder:
 
 ```bash
 python -m http.server 5173
