@@ -2,7 +2,7 @@
 
 Enter names, spin the 3D wheel and pick a random winner.
 
-Live: https://cantsdlnn.github.io/carkla/
+Live: https://cantsdlnn.github.io/spinpick/
 
 - 3D wheel and trophy model rendered with three.js
 - Name list, per-slice colors, results history
