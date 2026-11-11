@@ -1,4 +1,4 @@
-# Çarkla
+# Spinpick
 
 Enter names, spin the 3D wheel and pick a random winner.
 
