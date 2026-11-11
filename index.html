@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Çarkla</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="İsimleri gir, 3D çarkı çevir, rastgele kazananı seç.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08080f;
+    --bg-2:#0f0f1c;
+    --surface:rgba(255,255,255,.045);
+    --surface-2:rgba(255,255,255,.075);
+    --border:rgba(255,255,255,.09);
+    --border-2:rgba(255,255,255,.16);
+    --text:#f3f1ff;
+    --muted:#a19dbd;
+    --faint:#6d6a88;
+    --accent:#7c6cff;
+    --accent-2:#ff5c8a;
+    --gold:#f2c063;
+    --ok:#2dd4a7;
+    --radius:18px;
+    --shadow:0 20px 60px -20px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:var(--text);
+    background:var(--bg);
+    background-image:
+      radial-gradient(900px 600px at 20% 10%, rgba(124,108,255,.18), transparent 60%),
+      radial-gradient(800px 600px at 85% 90%, rgba(255,92,138,.12), transparent 60%),
+      radial-gradient(600px 400px at 70% 0%, rgba(242,192,99,.07), transparent 60%);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  ::selection{background:rgba(124,108,255,.45)}
+
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:21;background:rgba(9,9,17,.96)}
+  /* ---------- Header ---------- */
+  .top{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding-block:14px;padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px));
+    border-bottom:1px solid var(--border);
+    background:rgba(9,9,17,.96);position:sticky;top:env(safe-area-inset-top, 0px);z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brand svg{width:32px;height:32px}
+  .brand small{display:block;font-weight:500;font-size:11.5px;color:var(--muted);letter-spacing:0}
+  .top-actions{display:flex;gap:8px}
+  .ghost{
+    display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:12px;
+    border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:600;color:var(--text);
+    transition:background .2s,border-color .2s,transform .15s;
+  }
+  .ghost:hover{background:var(--surface-2);border-color:var(--border-2)}
+  .ghost:active{transform:scale(.97)}
+  .ghost svg{width:16px;height:16px;flex:none}
+  .ghost.icon{width:38px;padding:0;justify-content:center}
+
+  /* ---------- Layout ---------- */
+  .app{
+    display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;
+    padding-block:20px 24px;padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px));
+    min-height:calc(100vh - 67px);
+    transition:grid-template-columns .35s ease;
+  }
+  .app.panel-hidden{grid-template-columns:minmax(0,1fr) 0px}
+  .app.panel-hidden .panel{opacity:0;pointer-events:none;transform:translateX(20px)}
+
+  /* ---------- Stage ---------- */
+  .stage{
+    position:relative;border-radius:28px;border:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01));
+    overflow:hidden;min-height:560px;display:flex;flex-direction:column;
+  }
+  .stage:fullscreen{border-radius:0;background:var(--bg)}
+  .stage-head{position:relative;z-index:2;display:flex;justify-content:center;padding:22px 20px 0}
+  .title-input{
+    width:min(560px,100%);text-align:center;background:transparent;border:1px solid transparent;
+    border-radius:14px;padding:8px 14px;font-size:clamp(22px,2.6vw,32px);font-weight:800;letter-spacing:-.025em;
+    outline:none;transition:border-color .2s,background .2s;
+  }
+  .title-input:hover{border-color:var(--border)}
+  .title-input:focus{border-color:var(--accent);background:rgba(124,108,255,.06)}
+  #wheel-wrap{position:relative;flex:1;min-height:420px}
+  #wheel-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}
+  .stage-foot{
+    position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 20px 24px;
+  }
+  .spin-btn{
+    position:relative;height:58px;min-width:220px;padding:0 34px;border:0;border-radius:999px;
+    font-weight:800;font-size:17px;letter-spacing:.08em;color:#fff;
+    background:linear-gradient(135deg,#8a7bff 0%,#6d5dfc 45%,#ff5c8a 100%);
+    box-shadow:0 14px 40px -10px rgba(124,108,255,.75), inset 0 1px 0 rgba(255,255,255,.35);
+    transition:transform .2s, box-shadow .2s, filter .2s;
+  }
+  .spin-btn:hover{transform:translateY(-2px);box-shadow:0 20px 50px -12px rgba(124,108,255,.9), inset 0 1px 0 rgba(255,255,255,.35)}
+  .spin-btn:active{transform:translateY(0) scale(.98)}
+  .spin-btn:disabled{filter:grayscale(.6) brightness(.75);cursor:not-allowed;transform:none}
+  .hint{font-size:12.5px;color:var(--faint);display:flex;gap:8px;align-items:center}
+  kbd{font:600 11px/1 "Plus Jakarta Sans",sans-serif;padding:4px 6px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--muted)}
+  .loader{position:absolute;left:0;right:0;bottom:4px;text-align:center;color:var(--muted);font-size:14px;z-index:1;transition:opacity .4s}
+  .loader.done{opacity:0;pointer-events:none}
+
+  /* ---------- Panel ---------- */
+  .panel{
+    border-radius:24px;border:1px solid var(--border);background:#11111f;
+    display:flex;flex-direction:column;overflow:hidden;min-width:0;box-shadow:var(--shadow);
+    transition:opacity .3s, transform .35s;
+  }
+  .tabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--border)}
+  .tab{
+    flex:1;height:40px;white-space:nowrap;padding:0 6px;border:0;border-radius:12px;background:transparent;color:var(--muted);
+    font-weight:700;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s,color .2s;
+  }
+  .tab:hover{color:var(--text)}
+  .tab[aria-selected="true"]{background:var(--surface-2);color:var(--text)}
+  .badge{min-width:22px;height:20px;padding:0 6px;border-radius:999px;background:rgba(124,108,255,.22);color:#c9c1ff;font-size:11.5px;display:inline-grid;place-items:center}
+  .tab-body{display:none;flex:1;flex-direction:column;padding:16px;gap:12px;min-height:0}
+  .tab-body.active{display:flex}
+  .toolbar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .tool{
+    height:38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;gap:6px;color:var(--text);transition:background .2s,border-color .2s;
+  }
+  .tool:hover{background:var(--surface-2);border-color:var(--border-2)}
+  .tool svg{width:15px;height:15px}
+  .tool.danger[data-armed]{border-color:rgba(255,92,138,.7);background:rgba(255,92,138,.14);color:#ffb3c7}
+  .tool.danger:hover{border-color:rgba(255,92,138,.5);background:rgba(255,92,138,.08)}
+  .names{
+    flex:1;min-height:300px;resize:none;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);
+    padding:14px 16px;font-size:15px;line-height:1.75;outline:none;transition:border-color .2s;
+  }
+  .names:focus{border-color:var(--accent)}
+  .names[readonly]{opacity:.6}
+  .add-row{display:flex;gap:8px}
+  .add-row input{
+    flex:1;height:42px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.25);padding:0 14px;outline:none;font-size:14px;
+  }
+  .add-row input:focus{border-color:var(--accent)}
+  .add-row button{height:42px;padding:0 16px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:700;font-size:14px}
+  .add-row button:hover{filter:brightness(1.1)}
+  .small{font-size:12px;color:var(--faint)}
+
+  .results{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;overflow:auto;flex:1;min-height:200px}
+  .results li{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
+    animation:slideIn .35s ease;
+  }
+  .results .n{width:26px;height:26px;border-radius:8px;background:rgba(242,192,99,.15);color:var(--gold);font-weight:800;font-size:12px;display:grid;place-items:center;flex:none}
+  .results .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .results time{font-size:12px;color:var(--faint)}
+  .empty{color:var(--faint);font-size:14px;text-align:center;padding:40px 10px;border:1px dashed var(--border);border-radius:14px}
+
+  .setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--border);background:var(--surface)}
+  .setting .lbl{font-weight:600;font-size:14px}
+  .setting .sub{font-size:12px;color:var(--faint);margin-top:2px}
+  .setting.col{flex-direction:column;align-items:stretch}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .val{font-weight:700;color:#c9c1ff;font-size:13px}
+  .switch{position:relative;width:44px;height:26px;flex:none}
+  .switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;z-index:1}
+  .switch span{position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.12);transition:background .2s}
+  .switch span::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+  .switch input:checked + span{background:var(--accent)}
+  .switch input:checked + span::after{transform:translateX(18px)}
+  .switch input:focus-visible + span{outline:2px solid #fff;outline-offset:2px}
+  .palettes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+  .pal{border:1px solid var(--border);background:rgba(0,0,0,.2);border-radius:12px;padding:10px;text-align:left;transition:border-color .2s}
+  .pal:hover{border-color:var(--border-2)}
+  .pal[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,108,255,.2)}
+  .pal .sw{display:flex;height:18px;border-radius:6px;overflow:hidden;margin-bottom:6px}
+  .pal .sw i{flex:1}
+  .pal b{font-size:12.5px;font-weight:600}
+
+  .seg-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .seg-head .tool{padding:0 12px}
+  .seg-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;overflow:auto;flex:1;min-height:220px;max-height:520px}
+  .seg-list li{display:flex;align-items:center;gap:12px;padding:8px 10px 8px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface)}
+  .seg-list li.custom{border-color:rgba(124,108,255,.45)}
+  .swatch{position:relative;width:34px;height:34px;border-radius:10px;flex:none;cursor:pointer;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+  .swatch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+  .seg-list .nm{flex:1;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .seg-list .hex{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;text-transform:uppercase}
+  .seg-list .rst{width:30px;height:30px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);display:grid;place-items:center;visibility:hidden}
+  .seg-list li.custom .rst{visibility:visible}
+  .seg-list .rst:hover{color:var(--text);border-color:var(--border-2)}
+  .seg-list .rst svg{width:14px;height:14px}
+
+  /* ---------- Modal ---------- */
+  .modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(5,5,12,.78);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s,visibility 0s .3s}
+  .modal.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .3s}
+  .card{
+    width:min(460px,100%);border-radius:28px;border:1px solid var(--border-2);padding:22px 26px 26px;text-align:center;position:relative;
+    background:linear-gradient(180deg,rgba(40,34,80,.95),rgba(18,16,34,.97));box-shadow:0 40px 120px -20px rgba(124,108,255,.45);
+    transform:translateY(20px) scale(.96);transition:transform .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  .modal.open .card{transform:none}
+  .card .x{position:absolute;top:14px;right:14px}
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.22em;color:var(--gold);text-transform:uppercase}
+  #trophy-canvas{width:220px;height:220px;display:block;margin:4px auto 0}
+  .winner-name{
+    font-size:clamp(28px,6vw,44px);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:4px 0 22px;word-break:break-word;
+    background:linear-gradient(135deg,#fff 10%,#f2c063 60%,#ff9ab8);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .card-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{height:46px;padding:0 20px;border-radius:14px;font-weight:700;font-size:14.5px;border:1px solid var(--border-2);background:var(--surface-2)}
+  .btn:hover{background:rgba(255,255,255,.12)}
+  .btn.primary{border:0;background:linear-gradient(135deg,#8a7bff,#6d5dfc);box-shadow:0 10px 30px -10px rgba(124,108,255,.8)}
+  .btn.primary:hover{filter:brightness(1.08)}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#1d1a33;border:1px solid var(--border-2);padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;z-index:60;pointer-events:none}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 980px){
+    .app,.app.panel-hidden{grid-template-columns:1fr;padding-block:16px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+    .app.panel-hidden .panel{display:none}
+    .stage{min-height:auto}
+    #wheel-wrap{min-height:min(92vw,520px)}
+    .names{min-height:240px}
+    #toggle-panel{display:none}
+  }
+  @media (max-width: 560px){
+    .top{padding-block:12px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+    .brand small{display:none}
+    .ghost .t{display:none}
+    .ghost{width:38px;padding:0;justify-content:center}
+    .spin-btn{min-width:0;width:100%}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a7bff"/><stop offset="1" stop-color="#ff5c8a"/></linearGradient></defs>
+      <circle cx="16" cy="16" r="14" fill="url(#lg)"/>
+      <path d="M16 16 L16 2 A14 14 0 0 1 28.1 9 Z" fill="#fff" opacity=".9"/>
+      <path d="M16 16 L28.1 23 A14 14 0 0 1 16 30 Z" fill="#fff" opacity=".35"/>
+      <path d="M16 16 L3.9 23 A14 14 0 0 1 3.9 9 Z" fill="#fff" opacity=".6"/>
+      <circle cx="16" cy="16" r="3.4" fill="#f2c063"/>
+    </svg>
+    <div>Çarkla<small>Rastgele isim seçici</small></div>
+  </div>
+  <div class="top-actions">
+    <button class="ghost" id="fullscreen" title="Tam ekran">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      <span class="t">Tam ekran</span>
+    </button>
+    <button class="ghost" id="toggle-panel" title="Paneli gizle / göster">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+      <span class="t" id="toggle-panel-t">Paneli gizle</span>
+    </button>
+  </div>
+</header>
+
+<main class="app" id="app">
+  <section class="stage" id="stage">
+    <div class="stage-head">
+      <input class="title-input" id="title" maxlength="60" aria-label="Çark başlığı" spellcheck="false">
+    </div>
+    <div id="wheel-wrap">
+      <div class="loader" id="loader">3D sahne yükleniyor…</div>
+      <canvas id="wheel-canvas" aria-label="Şans çarkı. Çevirmek için tıklayın."></canvas>
+    </div>
+    <div class="stage-foot">
+      <button class="spin-btn" id="spin">ÇEVİR</button>
+      <div class="hint">Çarka tıklayarak da çevirebilirsin <kbd>Ctrl</kbd>+<kbd>Enter</kbd></div>
+    </div>
+  </section>
+
+  <aside class="panel" id="panel">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="names">İsimler <span class="badge" id="names-count">0</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="colors">Renkler</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="results">Sonuçlar <span class="badge" id="results-count">0</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="settings">Ayarlar</button>
+    </div>
+
+    <div class="tab-body active" data-body="names">
+      <div class="toolbar">
+        <button class="tool" id="shuffle" title="İsimleri karıştır">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>Karıştır</button>
+        <button class="tool" id="sort" title="Alfabetik sırala">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5M18 8v12M15 17l3 3 3-3"/></svg>Sırala</button>
+        <button class="tool" id="sample" title="Örnek isimler">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg>Örnek</button>
+        <button class="tool danger" id="clear" title="Tümünü temizle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Temizle</button>
+      </div>
+      <form class="add-row" id="add-form">
+        <input id="add-input" placeholder="İsim ekle ve Enter'a bas" maxlength="80" autocomplete="off">
+        <button type="submit">Ekle</button>
+      </form>
+      <textarea class="names" id="names" spellcheck="false" aria-label="Çarktaki isimler, her satıra bir isim"></textarea>
+      <div class="small">Her satıra bir isim yaz. Aynı isim birden fazla yazılırsa çarkta o kadar dilim alır.</div>
+    </div>
+
+    <div class="tab-body" data-body="colors">
+      <div class="setting col">
+        <span class="lbl">Hazır renk teması</span>
+        <div class="palettes" id="palettes"></div>
+      </div>
+      <div class="seg-head">
+        <div><div class="lbl" style="font-weight:700;font-size:14px">Dilim renkleri</div><div class="small">Bir rengin üstüne tıklayıp istediğin rengi seç</div></div>
+        <button class="tool" id="reset-colors">Tümünü sıfırla</button>
+      </div>
+      <ul class="seg-list" id="seg-list"></ul>
+    </div>
+
+    <div class="tab-body" data-body="results">
+      <ul class="results" id="results"></ul>
+      <div class="toolbar" style="grid-template-columns:1fr 1fr">
+        <button class="tool" id="copy-results">Kopyala</button>
+        <button class="tool danger" id="clear-results">Sonuçları temizle</button>
+      </div>
+    </div>
+
+    <div class="tab-body" data-body="settings">
+      <div class="setting col">
+        <div class="row"><span class="lbl">Dönme süresi</span><span class="val" id="dur-val">8 sn</span></div>
+        <input type="range" id="duration" min="2" max="20" step="1" aria-label="Dönme süresi (saniye)">
+      </div>
+      <label class="setting">
+        <div><div class="lbl">Kazananı otomatik kaldır</div><div class="sub">Seçilen isim çarktan çıkarılır</div></div>
+        <span class="switch"><input type="checkbox" id="auto-remove"><span></span></span>
+      </label>
+      <label class="setting">
+        <div><div class="lbl">Ses efektleri</div><div class="sub">Tık sesi ve kutlama müziği</div></div>
+        <span class="switch"><input type="checkbox" id="sound"><span></span></span>
+      </label>
+      <label class="setting">
+        <div><div class="lbl">Konfeti</div><div class="sub">Kazanan çıkınca kutlama</div></div>
+        <span class="switch"><input type="checkbox" id="confetti"><span></span></span>
+      </label>
+    </div>
+  </aside>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="winner-name">
+  <div class="card">
+    <button class="ghost icon x" id="modal-x" aria-label="Kapat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="eyebrow">Kazanan</div>
+    <canvas id="trophy-canvas" width="440" height="440"></canvas>
+    <div class="winner-name" id="winner-name">—</div>
+    <div class="card-actions">
+      <button class="btn" id="m-close">Kapat</button>
+      <button class="btn" id="m-remove">Çarktan kaldır</button>
+      <button class="btn primary" id="m-again">Tekrar çevir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ================= State ================= */
+const KEY = 'carkla.v1';
+const SAMPLE = ['Ayşe','Mehmet','Zeynep','Can','Elif','Burak','Selin','Emre'];
+const PALETTES = {
+  gece:    { name:'Gece',    colors:['#6D5DFC','#FF5C8A','#FFB547','#22C3A6','#3BA7FF','#B15CFF'] },
+  pastel:  { name:'Pastel',  colors:['#A5B4FC','#F9A8D4','#FDE68A','#86EFAC','#93C5FD','#FDBA74'] },
+  neon:    { name:'Neon',    colors:['#00F5D4','#F15BB5','#FEE440','#00BBF9','#9B5DE5','#FF6B35'] },
+  sonbahar:{ name:'Sonbahar',colors:['#E76F51','#F4A261','#E9C46A','#2A9D8F','#264653','#D4A373'] },
+};
+const store = {
+  get(){ try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } },
+  set(v){ try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} }
+};
+const state = Object.assign({
+  title:'Şans Çarkı', names:SAMPLE.join('\n'), duration:8,
+  autoRemove:false, sound:true, confetti:true, palette:'gece', results:[], panelHidden:false, segColors:{}
+}, store.get() || {});
+if (!PALETTES[state.palette]) state.palette = 'gece';
+if (!state.segColors || typeof state.segColors !== 'object') state.segColors = {};
+const save = () => store.set(state);
+
+/* ================= DOM ================= */
+const $ = s => document.querySelector(s);
+const els = {
+  title:$('#title'), names:$('#names'), count:$('#names-count'), rcount:$('#results-count'),
+  results:$('#results'), spin:$('#spin'), duration:$('#duration'), durVal:$('#dur-val'),
+  autoRemove:$('#auto-remove'), sound:$('#sound'), confetti:$('#confetti'), palettes:$('#palettes'),
+  modal:$('#modal'), winner:$('#winner-name'), toast:$('#toast'), app:$('#app'), stage:$('#stage'),
+  wrap:$('#wheel-wrap'), canvas:$('#wheel-canvas'), loader:$('#loader')
+};
+
+const getNames = () => els.names.value.split('\n').map(s => s.trim()).filter(Boolean);
+
+function toast(msg){
+  els.toast.textContent = msg; els.toast.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => els.toast.classList.remove('show'), 2200);
+}
+
+/* ================= Audio (gerçekçi, sentezlenmiş) ================= */
+let actx = null, master = null, noiseBuf = null, lastTick = 0, whoosh = null;
+function ensureAudio(){
+  if (!actx) {
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = actx.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.ratio.value = 4;
+      master = actx.createGain(); master.gain.value = .9;
+      master.connect(comp).connect(actx.destination);
+      // 2 sn beyaz gürültü: tık, rüzgâr ve alkış için ortak kaynak
+      noiseBuf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch { actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function noiseSrc(offset = Math.random() * 1.5){
+  const s = actx.createBufferSource(); s.buffer = noiseBuf; s._off = offset; return s;
+}
+
+// Plastik ibrenin pime vuruşu: gerçek bir tıkın titreşim modlarından örnek örnek üretilir
+// (kısa temas patlaması + plastik dilin sönümlenen rezonansları). Her vuruş için 6 farklı varyasyon.
+let clickBufs = null;
+function makeClicks(){
+  const sr = actx.sampleRate, len = Math.floor(sr * .07);
+  clickBufs = [];
+  for (let v = 0; v < 6; v++) {
+    const b = actx.createBuffer(1, len, sr), d = b.getChannelData(0);
+    const j = 1 + (Math.random() - .5) * .08;
+    // [frekans, genlik, sönüm süresi]
+    const modes = [[1980 * j, .5, .014], [3270 * j, .34, .008], [4890 * j, .2, .0045], [7400 * j, .1, .0025], [1130 * j, .2, .02], [430, .12, .028]];
+    const ph = modes.map(() => Math.random() * Math.PI * 2);
+    let peak = 0;
+    for (let i = 0; i < len; i++) {
+      const t = i / sr;
+      let x = (Math.random() * 2 - 1) * Math.exp(-t / .0006) * .8;            // temas anı
+      for (let m = 0; m < modes.length; m++) {
+        const [f, a, tau] = modes[m];
+        x += a * Math.exp(-t / tau) * Math.sin(Math.PI * 2 * f * t + ph[m]);
+      }
+      x *= Math.min(1, i / (sr * .00025));                                      // tıklama artefaktı olmasın
+      d[i] = x; peak = Math.max(peak, Math.abs(x));
+    }
+    for (let i = 0; i < len; i++) d[i] *= .9 / peak;
+    clickBufs.push(b);
+  }
+}
+function tickSound(vol = 1){
+  if (!state.sound || !actx) return;
+  const now = performance.now(); if (now - lastTick < 22) return; lastTick = now;
+  if (!clickBufs) makeClicks();
+  const v = Math.max(.15, Math.min(1, vol)), t = actx.currentTime;
+  const src = actx.createBufferSource();
+  src.buffer = clickBufs[(Math.random() * clickBufs.length) | 0];
+  src.playbackRate.value = .93 + .1 * v + Math.random() * .03;    // sert vuruş biraz daha tiz
+  const lp = actx.createBiquadFilter(); lp.type = 'lowpass';
+  lp.frequency.value = 2200 + 9000 * v * v;                         // yumuşak vuruş daha boğuk
+  const g = actx.createGain(); g.gain.value = .3 + 1.1 * v;
+  src.connect(lp).connect(g).connect(master); src.start(t);
+}
+
+// Dönen çarkın hava uğultusu (hıza göre ses ve perde değişir)
+function startWhoosh(){
+  if (!state.sound || !actx || whoosh) return;
+  const src = noiseSrc(0); src.loop = true;
+  const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = .8; bp.frequency.value = 400;
+  const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+  const g = actx.createGain(); g.gain.value = 0;
+  src.connect(bp).connect(lp).connect(g).connect(master); src.start();
+  whoosh = { src, bp, g };
+}
+function updateWhoosh(speed){
+  if (!whoosh) return;
+  const x = Math.min(1, speed / 24), t = actx.currentTime;
+  whoosh.g.gain.setTargetAtTime(state.sound ? .09 * x * x : 0, t, .08);
+  whoosh.bp.frequency.setTargetAtTime(250 + 650 * x, t, .1);
+}
+function stopWhoosh(){
+  if (!whoosh) return;
+  const w = whoosh; whoosh = null;
+  w.g.gain.setTargetAtTime(0, actx.currentTime, .15);
+  setTimeout(() => { try { w.src.stop(); } catch {} }, 900);
+}
+
+// Kazanan: iki vuruşlu zil + kalabalık alkışı
+function bell(t, f, gain){
+  [[1, 1], [2, .45], [2.76, .3], [5.4, .12], [8.93, .05]].forEach(([m, a]) => {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine'; o.frequency.value = f * m;
+    const dur = 1.8 / Math.sqrt(m);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain * a, t + .004);
+    g.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    o.connect(g).connect(master); o.start(t); o.stop(t + dur + .05);
+  });
+}
+function applause(t0, dur = 2.6){
+  // arka plan kalabalık hışırtısı
+  const bed = noiseSrc(), bf = actx.createBiquadFilter(), bg = actx.createGain();
+  bf.type = 'bandpass'; bf.frequency.value = 1800; bf.Q.value = .6;
+  bg.gain.setValueAtTime(0, t0); bg.gain.linearRampToValueAtTime(.05, t0 + .25);
+  bg.gain.setValueAtTime(.05, t0 + dur * .55); bg.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+  bed.connect(bf).connect(bg).connect(master); bed.start(t0, bed._off, dur + .1);
+  // tek tek el çırpmaları
+  const claps = Math.round(dur * 34);
+  for (let i = 0; i < claps; i++) {
+    const p = i / claps, t = t0 + p * dur + Math.random() * .04;
+    const env = Math.min(1, p * 6) * (1 - Math.pow(p, 2.2));
+    const s = noiseSrc(), f = actx.createBiquadFilter(), g = actx.createGain();
+    f.type = 'bandpass'; f.frequency.value = 900 + Math.random() * 1800; f.Q.value = 1.4;
+    const a = (.12 + Math.random() * .14) * env;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + .002);
+    g.gain.exponentialRampToValueAtTime(.001, t + .03 + Math.random() * .03);
+    s.connect(f).connect(g).connect(master); s.start(t, s._off, .08);
+  }
+}
+function fanfare(){
+  if (!state.sound || !actx) return;
+  const t = actx.currentTime + .02;
+  bell(t, 1318.5, .16);        // E6
+  bell(t + .16, 1760, .14);    // A6
+  applause(t + .12);
+}
+
+/* ================= Wheel texture ================= */
+const TEX = 2048, C = TEX / 2, RR = C - 4;
+const texCanvas = document.createElement('canvas'); texCanvas.width = texCanvas.height = TEX;
+const tctx = texCanvas.getContext('2d');
+const FONT = '"Plus Jakarta Sans", system-ui, sans-serif';
+
+function lum(hex){
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const f = c => c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
+  return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+}
+// Her dilimin anahtarı: isim + kaçıncı tekrarı olduğu (karıştırınca da renk isimle birlikte gider)
+let segKeys = [];
+function computeKeys(list){
+  const seen = {};
+  segKeys = list.map(nm => { seen[nm] = (seen[nm] || 0) + 1; return nm + '#' + seen[nm]; });
+}
+function baseColor(i, n, colors){
+  const k = colors.length;
+  if (n > 1 && i === n - 1 && n % k === 1) return colors[(i + 1) % k]; // son dilim ilkine benzemesin
+  return colors[i % k];
+}
+function segColor(i, n, colors){
+  const custom = state.segColors[segKeys[i]];
+  return custom || baseColor(i, n, colors);
+}
+function drawWheel(names){
+  const ctx = tctx, n = names.length, colors = PALETTES[state.palette].colors;
+  ctx.clearRect(0, 0, TEX, TEX);
+  if (!n) {
+    ctx.fillStyle = '#26233d'; ctx.beginPath(); ctx.arc(C, C, RR, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#a19dbd'; ctx.font = `700 92px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('İsim ekleyin', C, C + 330);
+    return;
+  }
+  const seg = Math.PI * 2 / n;
+  for (let i = 0; i < n; i++) {
+    ctx.beginPath(); ctx.moveTo(C, C); ctx.arc(C, C, RR, i * seg, (i + 1) * seg); ctx.closePath();
+    ctx.fillStyle = segColor(i, n, colors); ctx.fill();
+  }
+  // derinlik gradyanı
+  const g = ctx.createRadialGradient(C, C, RR * .15, C, C, RR);
+  g.addColorStop(0, 'rgba(255,255,255,.16)'); g.addColorStop(.55, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.22)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(C, C, RR, 0, Math.PI * 2); ctx.fill();
+  // ayraçlar
+  if (n > 1 && n <= 90) {
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = n > 40 ? 2 : 5;
+    for (let i = 0; i < n; i++) {
+      const a = i * seg; ctx.beginPath(); ctx.moveTo(C, C); ctx.lineTo(C + Math.cos(a) * RR, C + Math.sin(a) * RR); ctx.stroke();
+    }
+  }
+  // yazılar
+  const inner = RR * .24, outer = RR * .92, maxW = outer - inner;
+  const arcH = n === 1 ? RR : 2 * (RR * .62) * Math.sin(seg / 2);
+  let base = Math.min(118, arcH * .62);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    let label = names[i], size = base;
+    ctx.font = `700 ${size}px ${FONT}`;
+    let w = ctx.measureText(label).width;
+    if (w > maxW) { size = Math.max(Math.min(base, 30), base * .7, size * maxW / w); ctx.font = `700 ${size}px ${FONT}`; w = ctx.measureText(label).width; }
+    if (w > maxW) {
+      while (label.length > 1 && ctx.measureText(label + '…').width > maxW) label = label.slice(0, -1);
+      label += '…';
+    }
+    const col = segColor(i, n, colors);
+    ctx.save(); ctx.translate(C, C); ctx.rotate((i + .5) * seg);
+    ctx.fillStyle = lum(col) > .45 ? '#1b1733' : '#ffffff';
+    ctx.shadowColor = lum(col) > .45 ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.35)';
+    ctx.shadowBlur = size * .12; ctx.shadowOffsetY = size * .04;
+    ctx.fillText(label, outer, 0);
+    ctx.restore();
+  }
+}
+
+/* ================= Three.js scene ================= */
+const renderer = new THREE.WebGLRenderer({ canvas: els.canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+let pixelRatio = Math.min(devicePixelRatio, 1.5);
+renderer.setPixelRatio(pixelRatio);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+scene.environment = envTex;
+
+const camera = new THREE.PerspectiveCamera(32, 1, .1, 100);
+camera.position.set(0, -.55, 10); camera.lookAt(0, 0, 0);
+
+// Hafif ışıklandırma: ortam haritası + tek yönlü ışık + renkli hemisfer (nokta ışıkları kaldırıldı)
+scene.add(new THREE.HemisphereLight(0xb9b0ff, 0x401830, .55));
+const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(3, 5, 8); scene.add(key);
+
+const R = 2.2;
+const stageGroup = new THREE.Group(); stageGroup.rotation.x = -.12; scene.add(stageGroup);
+const wheel = new THREE.Group(); stageGroup.add(wheel);
+
+// Arka parlama
+{
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(124,108,255,.55)'); gr.addColorStop(.45, 'rgba(255,92,138,.18)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.scale.setScalar(R * 4.2); glow.position.z = -.8; stageGroup.add(glow);
+}
+
+const wheelTex = new THREE.CanvasTexture(texCanvas);
+wheelTex.colorSpace = THREE.SRGBColorSpace;
+wheelTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const face = new THREE.Mesh(
+  new THREE.CircleGeometry(R, 128),
+  // Renkler paletle birebir görünsün diye doku emissive olarak basılır; hafif yansıma ortam haritasından gelir
+  new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: wheelTex, emissiveIntensity: .95, roughness: .45, metalness: 0, envMapIntensity: .25, toneMapped: false })
+);
+face.position.z = .125; wheel.add(face);
+
+const gold = new THREE.MeshStandardMaterial({ color: 0xe0b45a, metalness: 1, roughness: .24 });
+const darkMetal = new THREE.MeshStandardMaterial({ color: 0x1a1830, metalness: .6, roughness: .45 });
+
+const side = new THREE.Mesh(new THREE.CylinderGeometry(R + .02, R + .02, .25, 96, 1, true), darkMetal);
+side.rotation.x = Math.PI / 2; wheel.add(side);
+const back = new THREE.Mesh(new THREE.CircleGeometry(R + .02, 64), darkMetal);
+back.rotation.y = Math.PI; back.position.z = -.125; wheel.add(back);
+const rim = new THREE.Mesh(new THREE.TorusGeometry(R + .06, .1, 20, 128), gold);
+rim.position.z = .1; wheel.add(rim);
+
+// Merkez göbek
+const hub = new THREE.Group(); hub.position.z = .13; wheel.add(hub);
+{
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(.46, .5, .14, 64), darkMetal);
+  base.rotation.x = Math.PI / 2; base.position.z = .07; hub.add(base);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(.47, .045, 20, 80), gold);
+  ring.position.z = .14; hub.add(ring);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(.16, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), gold);
+  cap.rotation.x = Math.PI / 2; cap.position.z = .14; hub.add(cap);
+}
+
+// Pimler
+const pegGroup = new THREE.Group(); wheel.add(pegGroup);
+const pegGeo = new THREE.SphereGeometry(.052, 16, 12);
+function pegCountFor(n){ return n <= 1 ? 12 : (n <= 40 ? n : 40); }
+function buildPegs(n){
+  pegGroup.clear();
+  const k = pegCountFor(n), step = Math.PI * 2 / k;
+  for (let i = 0; i < k; i++) {
+    const a = -i * step, m = new THREE.Mesh(pegGeo, gold);
+    m.position.set(Math.cos(a) * (R - .07), Math.sin(a) * (R - .07), .17); pegGroup.add(m);
+  }
+}
+
+// İbre
+const pointer = new THREE.Group(); pointer.position.set(0, R + .32, .32); stageGroup.add(pointer);
+{
+  const s = new THREE.Shape();
+  s.moveTo(0, -.46); s.bezierCurveTo(.08, -.3, .26, -.05, .26, .1);
+  s.absarc(0, .1, .26, 0, Math.PI, false);
+  s.bezierCurveTo(-.26, -.05, -.08, -.3, 0, -.46);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: .12, bevelEnabled: true, bevelThickness: .04, bevelSize: .035, bevelSegments: 4, curveSegments: 32 });
+  geo.translate(0, -.1, -.06);
+  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff3d6e, roughness: .28, metalness: .1 }));
+  pointer.add(body);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(.09, 24, 16), gold); dot.position.set(0, 0, .1); pointer.add(dot);
+}
+
+// Arka plan parçacıkları
+const particles = (() => {
+  const N = 260, pos = new Float32Array(N * 3), col = new Float32Array(N * 3), c = new THREE.Color();
+  const pal = ['#8a7bff', '#ff5c8a', '#f2c063', '#ffffff'];
+  for (let i = 0; i < N; i++) {
+    pos[i * 3] = (Math.random() - .5) * 16; pos[i * 3 + 1] = (Math.random() - .5) * 10; pos[i * 3 + 2] = -2 - Math.random() * 6;
+    c.set(pal[i % pal.length]); col.set([c.r, c.g, c.b], i * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ size: .045, vertexColors: true, transparent: true, opacity: .7, depthWrite: false }));
+  scene.add(p); return p;
+})();
+
+// 3D Kupa (Higgsfield ile üretildi)
+let trophyModel = null;
+const trophyPivot = new THREE.Group(); trophyPivot.position.set(0, .02, .78); stageGroup.add(trophyPivot);
+function normalize(obj, height){
+  const box = new THREE.Box3().setFromObject(obj), size = box.getSize(new THREE.Vector3());
+  obj.scale.multiplyScalar(height / Math.max(size.y, 1e-6));
+  box.setFromObject(obj); obj.position.sub(box.getCenter(new THREE.Vector3()));
+  return obj;
+}
+function onTrophy(gltf){
+  trophyModel = gltf.scene;
+  trophyModel.traverse(o => { if (o.isMesh && o.material) {
+    // Higgsfield dokusu açık krem tonda geliyor; altın rengine çekiyoruz
+    o.material.color?.set(0xffc95c);
+    o.material.metalness = Math.max(o.material.metalness ?? 0, .55);
+    o.material.roughness = Math.min(o.material.roughness ?? 1, .35);
+    o.material.envMapIntensity = 1.3;
+  } });
+  const hubTrophy = trophyModel.clone(true);
+  trophyPivot.add(normalize(hubTrophy, .95));
+  els.loader.classList.add('done');
+}
+const trophyFail = () => els.loader.classList.add('done');
+if (window.TROPHY_GLB_B64) {
+  // Yayın sürümü: model bir .js dosyasına gömülü gelir (artifact sunucusu .glb sunmuyor)
+  try {
+    const bin = atob(window.TROPHY_GLB_B64), buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    new GLTFLoader().parse(buf.buffer, '', onTrophy, trophyFail);
+  } catch { trophyFail(); }
+} else {
+  new GLTFLoader().load('assets/trophy.glb', onTrophy, undefined, trophyFail);
+}
+
+// Boyutlandırma
+function resize(){
+  const w = els.wrap.clientWidth, h = els.wrap.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = Math.max((R + .75) / t, (R + .4) / (t * camera.aspect)) * 1.04;
+  camera.position.set(0, -.55, dist); camera.lookAt(0, .05, 0);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(els.wrap);
+
+/* ================= Spin logic (fizik tabanlı) ================= */
+const TAU = Math.PI * 2;
+let names = [], spinning = false, spinNames = [], spinStartT = 0, spinMaxT = 0;
+const norm = a => ((a % TAU) + TAU) % TAU;
+
+/*
+  İbre gerçek bir yaylı dil gibi davranır:
+  - Pimler ibrenin ucuna çarpınca ibreyi yana iter (ibre pime "takılır").
+  - İbre yeterince açılınca pim altından kayar, ibre yayla geri savrulur ve sallanır.
+  - İbrenin yay kuvveti çarkı da frenler; çark yavaşken son pim ibreyi geçemez,
+    çark hafifçe geri seker ve yerine oturur.
+*/
+const PH = {
+  L: .56, Rp: R - .07, cw: .075,          // ibre boyu, pim yarıçapı, temas genişliği
+  phiC: .3, phiStop: .4,                  // ibre en fazla bu kadar açılır (≈17° / 23°)
+  kp: 1500, cp: 44, vMax: 8,              // ibre yayı: daha sönümlü = sakin, doğal salınım
+  Ks: 600, Cs: 40, Kw: 30,                // çarkın eğriye bağlılığı ve pimin frenleme etkisi
+  p: 2.2,                                 // yavaşlama eğrisinin kuyruğu (büyük = daha uzun süzülme)
+  margin: .08,                            // durma noktası pime bu kadar yakın olmasın (rad)
+  dt: 1 / 1000
+};
+const sim = { r: 0, w: 0, phi: 0, pv: 0, inC: false, free: 1, k: 12, drive: null, done: true, settle: 0 };
+
+/*
+  Çark, sonu sıfır hızla biten yumuşak bir eğriyi izler: ω(t) = ω0·(1 − t/T)^p
+  → son 2–3 saniyede ağır ağır süzülür, asla birden durmaz.
+  Çark bu eğriye bir yayla bağlıdır; pim ibreye çarpınca ibre çarkı hafifçe frenler,
+  pim ibrenin altından kayınca çark yetişir → her pimde küçük, gerçekçi bir takılma.
+*/
+function driveAt(d){
+  const u = Math.min(1, d.t / d.T), q = 1 - u;
+  return [d.r0 - d.total * (1 - Math.pow(q, PH.p + 1)), -d.total * (PH.p + 1) / d.T * Math.pow(q, PH.p)];
+}
+function physStep(s, dt){
+  // ibre: sönümlü yay + durdurucu
+  s.pv += (-PH.kp * s.phi - PH.cp * s.pv) * dt;
+  s.phi += s.pv * dt;
+  if (Math.abs(s.phi) > PH.phiStop) { s.phi = Math.sign(s.phi) * PH.phiStop; s.pv *= -.2; }
+  // pim–ibre teması
+  const step = TAU / s.k, u = norm(s.r - Math.PI / 2) % step;
+  let tau = 0, contact = false, impact = 0;
+  for (const d of [u, u - step]) {
+    if (Math.abs(s.phi) >= PH.phiC) continue;
+    const xp = -PH.Rp * Math.sin(d), xt = PH.L * Math.sin(s.phi), dx = xt - xp;
+    if (Math.abs(dx) < PH.cw) {
+      const side = Math.abs(dx) > PH.cw * .5 ? Math.sign(dx) : (Math.sign(-s.w) || Math.sign(dx) || 1);
+      let pn = Math.asin(Math.max(-1, Math.min(1, (xp + side * PH.cw) / PH.L)));
+      if (Math.abs(pn) >= PH.phiC) pn = side * PH.phiC;
+      s.pv = Math.max(-PH.vMax, Math.min(PH.vMax, (pn - s.phi) / dt));
+      s.phi = pn; contact = true; tau += PH.Kw * s.phi;
+    }
+  }
+  if (contact && !s.inC && s.free > .03 && Math.abs(s.w) > .08) impact = Math.abs(s.w);
+  s.free = contact ? 0 : s.free + dt;
+  s.inC = contact;
+  if (tau * s.w > 0) tau *= .25;          // lastik ibre: geri bırakırken az enerji iade eder
+  // çark
+  if (s.drive) {
+    s.drive.t += dt;
+    const [rk, wk] = driveAt(s.drive);
+    s.w += (PH.Ks * (rk - s.r) + PH.Cs * (wk - s.w) + tau) * dt;
+    s.r += s.w * dt;
+    if (s.drive.t >= s.drive.T) {
+      const calm = Math.abs(rk - s.r) < 3e-4 && Math.abs(s.w) < .01 && Math.abs(s.pv) < .08 && !contact;
+      s.settle = calm ? s.settle + dt : 0;
+      if (s.settle > .25 || s.drive.t > s.drive.T + 2.5) { s.drive = null; s.w = 0; s.done = true; }
+    }
+  } else {
+    s.w = 0;                              // boştayken çark yerinde durur
+  }
+  return impact;
+}
+
+// Yeni çevirme planı: rastgele bitiş açısı (adil), pimin tam üstünde durmayacak şekilde
+function planSpin(s, T){
+  const step = TAU / s.k;
+  const turns = Math.max(2.5, T * .9);
+  let end = s.r - (turns * TAU + Math.random() * TAU);
+  const m = Math.min(PH.margin, step / 2 - .004), u = norm(end - Math.PI / 2) % step;
+  if (u < m) end += m - u;                // pime çok yakınsa aynı dilim içinde biraz kaydır
+  else if (step - u < m) end -= m - (step - u);
+  s.drive = { t: 0, T, r0: s.r, total: s.r - end };
+  s.w = 0; s.done = false; s.settle = 0;
+}
+
+function refreshNames(){
+  names = getNames();
+  computeKeys(names);
+  els.count.textContent = names.length;
+  els.spin.disabled = names.length < 1;
+  drawWheel(names); wheelTex.needsUpdate = true;
+  buildPegs(names.length);
+  sim.k = pegCountFor(names.length);
+  renderSegList();
+}
+function redrawOnly(){ drawWheel(names); wheelTex.needsUpdate = true; }
+function indexAt(rot, n){ return Math.floor(norm(rot - Math.PI / 2) / (TAU / n)) % n; }
+
+function spin(){
+  if (spinning) return;
+  names = getNames();
+  if (!names.length) { toast('Önce çarka isim ekleyin'); return; }
+  ensureAudio(); closeModal(true); startWhoosh();
+  spinning = true; spinNames = names.slice();
+  els.names.readOnly = true; els.spin.disabled = true; els.spin.textContent = 'DÖNÜYOR…';
+  const T = state.duration;
+  sim.k = pegCountFor(names.length);
+  planSpin(sim, T);
+  spinStartT = performance.now(); spinMaxT = (T + 6) * 1000;
+}
+
+function finishSpin(){
+  spinning = false; stopWhoosh();
+  sim.done = true; sim.drive = null; sim.w = 0;
+  els.names.readOnly = false; els.spin.disabled = false; els.spin.textContent = 'ÇEVİR';
+  const idx = indexAt(sim.r, spinNames.length);
+  const winner = spinNames[idx];
+  state.results.unshift({ name: winner, at: Date.now() });
+  state.results = state.results.slice(0, 200);
+  save(); renderResults();
+  setTimeout(() => showWinner(winner), 450);
+}
+
+/* ================= Interaction ================= */
+const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+const hitTargets = [face, rim, ...hub.children];   // kupa ağ yapısı ışın testine katılmaz (performans)
+function hit(e){
+  const r = els.canvas.getBoundingClientRect();
+  mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(mouse, camera);
+  return raycaster.intersectObjects(hitTargets, false).length > 0;
+}
+let hoverEvt = null;
+els.canvas.addEventListener('pointermove', e => {
+  if (!hoverEvt) requestAnimationFrame(() => { els.canvas.style.cursor = hit(hoverEvt) && !spinning ? 'pointer' : 'default'; hoverEvt = null; });
+  hoverEvt = e;
+});
+els.canvas.addEventListener('click', e => { if (hit(e)) spin(); });
+els.spin.addEventListener('click', spin);
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); spin(); }
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ================= Render loop ================= */
+const clock = new THREE.Clock();
+let acc = 0, stageVisible = true, slowFrames = 0, frameCount = 0;
+new IntersectionObserver(es => { stageVisible = es[0].isIntersecting; }).observe(els.wrap);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const raw = clock.getDelta(), dt = Math.min(raw, .1), t = clock.elapsedTime;
+
+  // Fizik: sabit 1 ms adımlar (kare hızından bağımsız, tutarlı sonuç)
+  acc += dt;
+  let maxImpact = 0;
+  while (acc >= PH.dt) {
+    const imp = physStep(sim, PH.dt);
+    if (imp > maxImpact) maxImpact = imp;
+    acc -= PH.dt;
+  }
+  if (spinning && maxImpact > 0) tickSound(Math.min(1, .2 + maxImpact / 9));
+  if (spinning) updateWhoosh(Math.abs(sim.w));
+  wheel.rotation.z = sim.r;
+  pointer.rotation.z = sim.phi;
+  if (spinning && (sim.done || performance.now() - spinStartT > spinMaxT)) finishSpin();
+
+  if (modalOpen) renderTrophy(dt);
+  if (!stageVisible) return;
+
+  trophyPivot.rotation.y += dt * (spinning ? 3.2 : .7);
+  trophyPivot.position.y = .02 + Math.sin(t * 1.6) * .04;
+  stageGroup.rotation.y = Math.sin(t * .35) * .04;
+  particles.rotation.y = t * .02; particles.position.y = Math.sin(t * .3) * .15;
+  renderer.render(scene, camera);
+
+  // Uyarlanabilir kalite: cihaz zorlanıyorsa çözünürlüğü düşür
+  if (++frameCount > 30 && pixelRatio > 1) {
+    slowFrames = raw > .026 ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+    if (slowFrames > 40) { pixelRatio = 1; renderer.setPixelRatio(1); resize(); slowFrames = 0; }
+  }
+}
+
+/* ================= Winner modal (3D kupa) ================= */
+let modalOpen = false, currentWinner = null, tRenderer = null, tScene, tCam, tPivot;
+function initTrophyScene(){
+  tRenderer = new THREE.WebGLRenderer({ canvas: $('#trophy-canvas'), antialias: true, alpha: true });
+  tRenderer.setPixelRatio(1); tRenderer.setSize(440, 440, false);
+  tRenderer.toneMapping = THREE.ACESFilmicToneMapping; tRenderer.toneMappingExposure = .8; tRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  tScene = new THREE.Scene();
+  const pm = new THREE.PMREMGenerator(tRenderer);
+  tScene.environment = pm.fromScene(new RoomEnvironment(), .04).texture;
+  tScene.add(new THREE.AmbientLight(0xffffff, .2));
+  const d = new THREE.DirectionalLight(0xfff1d6, 1.3); d.position.set(2, 4, 5); tScene.add(d);
+  const p1 = new THREE.PointLight(0x8a7bff, 10, 10); p1.position.set(-2, 1, 2); tScene.add(p1);
+  const p2 = new THREE.PointLight(0xff5c8a, 8, 10); p2.position.set(2, -1, 2); tScene.add(p2);
+  tCam = new THREE.PerspectiveCamera(30, 1, .1, 50); tCam.position.set(0, .15, 4.2); tCam.lookAt(0, 0, 0);
+  tPivot = new THREE.Group(); tScene.add(tPivot);
+  if (trophyModel) tPivot.add(normalize(trophyModel.clone(true), 1.75));
+}
+let tAge = 0;
+function renderTrophy(dt){
+  if (!tRenderer) return;
+  if (!tPivot.children.length && trophyModel) tPivot.add(normalize(trophyModel.clone(true), 1.75));
+  tAge += dt;
+  const s = Math.min(1, tAge / .6), e = 1 - Math.pow(1 - s, 3);
+  tPivot.scale.setScalar(.4 + .6 * e);
+  tPivot.rotation.y += dt * (1 + 6 * (1 - e));
+  tPivot.position.y = Math.sin(tAge * 2) * .05;
+  tRenderer.render(tScene, tCam);
+}
+function showWinner(name){
+  currentWinner = name;
+  els.winner.textContent = name;
+  if (!tRenderer) initTrophyScene();
+  tAge = 0; modalOpen = true; els.modal.classList.add('open');
+  $('#m-again').focus({ preventScroll: true });
+  fanfare();
+  if (state.confetti && window.confetti) {
+    const colors = PALETTES[state.palette].colors;
+    confetti({ particleCount: 140, spread: 80, origin: { y: .6 }, colors, zIndex: 70 });
+    setTimeout(() => {
+      confetti({ particleCount: 70, angle: 60, spread: 60, origin: { x: 0, y: .7 }, colors, zIndex: 70 });
+      confetti({ particleCount: 70, angle: 120, spread: 60, origin: { x: 1, y: .7 }, colors, zIndex: 70 });
+    }, 250);
+  }
+  if (state.autoRemove) removeName(name, true);
+}
+function closeModal(silent){
+  if (!modalOpen) return;
+  modalOpen = false; els.modal.classList.remove('open');
+}
+function removeName(name, auto){
+  const lines = els.names.value.split('\n');
+  const i = lines.findIndex(l => l.trim() === name);
+  if (i < 0) return false;
+  lines.splice(i, 1);
+  els.names.value = lines.join('\n');
+  onNamesChanged();
+  toast(auto ? `“${name}” otomatik olarak çarktan kaldırıldı` : `“${name}” çarktan kaldırıldı`);
+  return true;
+}
+$('#modal-x').onclick = () => closeModal();
+$('#m-close').onclick = () => closeModal();
+$('#m-again').onclick = () => { closeModal(); setTimeout(spin, 150); };
+$('#m-remove').onclick = () => { if (currentWinner) removeName(currentWinner); closeModal(); };
+els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
+
+/* ================= Panel UI ================= */
+let namesT;
+function onNamesChanged(){
+  state.names = els.names.value; save();
+  clearTimeout(namesT); namesT = setTimeout(refreshNames, 120);
+}
+els.names.addEventListener('input', onNamesChanged);
+$('#add-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('#add-input').value.trim(); if (!v) return;
+  const cur = els.names.value.replace(/\s+$/, '');
+  els.names.value = cur ? cur + '\n' + v : v;
+  $('#add-input').value = ''; onNamesChanged();
+});
+$('#shuffle').onclick = () => {
+  const a = getNames();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  els.names.value = a.join('\n'); onNamesChanged(); toast('İsimler karıştırıldı');
+};
+$('#sort').onclick = () => {
+  els.names.value = getNames().sort((a, b) => a.localeCompare(b, 'tr')).join('\n'); onNamesChanged(); toast('Alfabetik sıralandı');
+};
+$('#sample').onclick = () => { els.names.value = SAMPLE.join('\n'); onNamesChanged(); };
+$('#clear').onclick = () => {
+  if (!els.names.value.trim()) return;
+  // sayfa içi onay: ilk tık uyarır, 3 sn içinde ikinci tık siler
+  const b = $('#clear');
+  if (!b.dataset.armed) {
+    b.dataset.armed = '1'; b.lastChild.textContent = 'Emin misin?'; toast('Tüm isimleri silmek için tekrar bas');
+    clearTimeout(b._t); b._t = setTimeout(() => { delete b.dataset.armed; b.lastChild.textContent = 'Temizle'; }, 3000);
+    return;
+  }
+  clearTimeout(b._t); delete b.dataset.armed; b.lastChild.textContent = 'Temizle';
+  els.names.value = ''; onNamesChanged(); toast('Tüm isimler silindi');
+};
+
+// Sekmeler
+document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t === tab));
+  document.querySelectorAll('.tab-body').forEach(b => b.classList.toggle('active', b.dataset.body === tab.dataset.tab));
+}));
+
+// Sonuçlar
+const fmt = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' });
+function renderResults(){
+  els.rcount.textContent = state.results.length;
+  els.results.innerHTML = '';
+  if (!state.results.length) {
+    const li = document.createElement('li'); li.className = 'empty'; li.style.display = 'block';
+    li.textContent = 'Henüz sonuç yok. Çarkı çevir!'; els.results.append(li); return;
+  }
+  state.results.forEach((r, i) => {
+    const li = document.createElement('li');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = state.results.length - i;
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = r.name;
+    const tm = document.createElement('time'); tm.textContent = fmt.format(new Date(r.at));
+    li.append(n, nm, tm); els.results.append(li);
+  });
+}
+$('#clear-results').onclick = () => { state.results = []; save(); renderResults(); };
+$('#copy-results').onclick = async () => {
+  const txt = state.results.slice().reverse().map((r, i) => `${i + 1}. ${r.name}`).join('\n');
+  if (!txt) return toast('Kopyalanacak sonuç yok');
+  try { await navigator.clipboard.writeText(txt); toast('Sonuçlar panoya kopyalandı'); } catch { toast('Kopyalanamadı'); }
+};
+
+// Ayarlar
+els.duration.value = state.duration; els.durVal.textContent = state.duration + ' sn';
+els.duration.oninput = () => { state.duration = +els.duration.value; els.durVal.textContent = state.duration + ' sn'; save(); };
+for (const [k, el] of [['autoRemove', els.autoRemove], ['sound', els.sound], ['confetti', els.confetti]]) {
+  el.checked = !!state[k]; el.onchange = () => { state[k] = el.checked; save(); };
+}
+function renderPalettes(){
+  els.palettes.innerHTML = '';
+  for (const [id, p] of Object.entries(PALETTES)) {
+    const b = document.createElement('button'); b.className = 'pal'; b.type = 'button';
+    b.setAttribute('aria-pressed', id === state.palette);
+    const sw = document.createElement('div'); sw.className = 'sw';
+    p.colors.forEach(c => { const i = document.createElement('i'); i.style.background = c; sw.append(i); });
+    const lbl = document.createElement('b'); lbl.textContent = p.name;
+    b.append(sw, lbl);
+    b.onclick = () => { state.palette = id; save(); renderPalettes(); refreshNames(); };
+    els.palettes.append(b);
+  }
+}
+
+// Dilim renkleri (tek tek)
+const segList = $('#seg-list');
+const RESET_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+let redrawQueued = false, saveT;
+function queueRedraw(){
+  if (redrawQueued) return; redrawQueued = true;
+  requestAnimationFrame(() => { redrawQueued = false; redrawOnly(); });
+}
+function renderSegList(){
+  segList.innerHTML = '';
+  if (!names.length) {
+    const li = document.createElement('li'); li.className = 'empty'; li.style.display = 'block';
+    li.textContent = 'Önce İsimler sekmesinden isim ekleyin.'; segList.append(li); return;
+  }
+  const colors = PALETTES[state.palette].colors, frag = document.createDocumentFragment();
+  names.forEach((nm, i) => {
+    const key = segKeys[i], col = segColor(i, names.length, colors);
+    const li = document.createElement('li'); li.classList.toggle('custom', !!state.segColors[key]);
+    const sw = document.createElement('label'); sw.className = 'swatch'; sw.style.background = col; sw.title = 'Rengi değiştir';
+    const inp = document.createElement('input'); inp.type = 'color'; inp.value = col.toLowerCase();
+    inp.setAttribute('aria-label', `${nm} dilim rengi`);
+    const label = document.createElement('span'); label.className = 'nm'; label.textContent = nm;
+    const hex = document.createElement('span'); hex.className = 'hex'; hex.textContent = col;
+    const rst = document.createElement('button'); rst.className = 'rst'; rst.type = 'button'; rst.title = 'Tema rengine dön'; rst.innerHTML = RESET_ICON;
+    inp.addEventListener('input', () => {
+      state.segColors[key] = inp.value; sw.style.background = inp.value; hex.textContent = inp.value;
+      li.classList.add('custom'); queueRedraw();
+      clearTimeout(saveT); saveT = setTimeout(save, 250);
+    });
+    rst.onclick = () => { delete state.segColors[key]; save(); redrawOnly(); renderSegList(); };
+    sw.append(inp); li.append(sw, label, hex, rst); frag.append(li);
+  });
+  segList.append(frag);
+}
+$('#reset-colors').onclick = () => {
+  if (!Object.keys(state.segColors).length) return toast('Özel renk yok');
+  state.segColors = {}; save(); redrawOnly(); renderSegList(); toast('Dilim renkleri temaya döndü');
+};
+
+// Başlık
+els.title.value = state.title;
+els.title.addEventListener('input', () => { state.title = els.title.value; save(); });
+
+// Üst butonlar
+function applyPanel(){
+  els.app.classList.toggle('panel-hidden', state.panelHidden);
+  $('#toggle-panel-t').textContent = state.panelHidden ? 'Paneli göster' : 'Paneli gizle';
+}
+$('#toggle-panel').onclick = () => { state.panelHidden = !state.panelHidden; save(); applyPanel(); };
+$('#fullscreen').onclick = () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else els.stage.requestFullscreen?.().catch(() => toast('Tam ekran desteklenmiyor'));
+};
+
+/* ================= Boot ================= */
+els.names.value = state.names;
+applyPanel(); renderPalettes(); renderResults();
+refreshNames(); resize();
+sim.r = Math.PI / 2 + Math.PI / sim.k;   // açılışta ibre bir dilimin ortasında dursun (pimin üstünde değil)
+document.fonts.load(`700 64px ${FONT}`).then(() => document.fonts.ready).then(refreshNames).catch(() => {});
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
